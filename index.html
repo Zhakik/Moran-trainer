@@ -1,0 +1,1414 @@
+<!doctype html>
+<html lang="he" dir="rtl">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta name="color-scheme" content="light" />
+  <meta name="theme-color" content="#176b55" />
+  <meta name="mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+  <meta name="apple-mobile-web-app-title" content="מאמן ניווט" />
+  <meta name="format-detection" content="telephone=no" />
+  <title>מאמן ניווט חזותי</title>
+  <style>
+    :root {
+      --bg: #eef3f1;
+      --panel: #ffffff;
+      --panel-2: #f6f9f8;
+      --text: #13231e;
+      --muted: #61716b;
+      --line: #d8e2de;
+      --accent: #176b55;
+      --accent-2: #dcefe9;
+      --good: #137a4d;
+      --bad: #b83b3b;
+      --warn: #9a6b0f;
+      --shadow: 0 12px 32px rgba(24, 56, 46, .10);
+      --radius: 22px;
+    }
+
+    * { box-sizing: border-box; }
+    html { min-height: 100%; -webkit-text-size-adjust: 100%; }
+    html, body { margin: 0; min-height: 100%; }
+    body {
+      font-family: Arial, "Noto Sans Hebrew", sans-serif;
+      background:
+        radial-gradient(circle at 10% 0%, rgba(23,107,85,.10), transparent 30%),
+        linear-gradient(180deg, #f7faf9 0%, var(--bg) 100%);
+      color: var(--text);
+      -webkit-tap-highlight-color: transparent;
+      overscroll-behavior-y: none;
+    }
+    button, input { font: inherit; }
+    button { cursor: pointer; touch-action: manipulation; -webkit-user-select: none; user-select: none; }
+    canvas { -webkit-user-select: none; user-select: none; }
+    button:focus-visible, [tabindex]:focus-visible {
+      outline: 3px solid rgba(23,107,85,.28);
+      outline-offset: 3px;
+    }
+
+    .app { min-height: 100vh; min-height: 100dvh; }
+    .screen { display: none; min-height: 100vh; min-height: 100dvh; }
+    .screen.active { display: block; }
+    .shell { width: min(1180px, calc(100% - 32px)); margin: 0 auto; padding: 24px 0 48px; }
+
+    .topbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      margin-bottom: 22px;
+    }
+    .brand { display: flex; align-items: center; gap: 12px; }
+    .brand-mark {
+      width: 48px; height: 48px; border-radius: 15px;
+      display: grid; place-items: center;
+      background: var(--accent); color: white; font-size: 28px;
+      box-shadow: var(--shadow);
+    }
+    .brand h1 { margin: 0; font-size: clamp(22px, 3vw, 32px); }
+    .brand small { color: var(--muted); display: block; margin-top: 3px; }
+    .icon-btn {
+      width: 44px; height: 44px; border: 1px solid var(--line); border-radius: 14px;
+      background: var(--panel); color: var(--text); font-size: 20px;
+      display: grid; place-items: center;
+    }
+
+    .hero {
+      background: var(--panel);
+      border: 1px solid rgba(23,107,85,.08);
+      border-radius: 28px;
+      box-shadow: var(--shadow);
+      padding: clamp(22px, 4vw, 38px);
+      display: grid;
+      grid-template-columns: 1.35fr .65fr;
+      gap: 28px;
+      align-items: center;
+    }
+    .hero h2 { font-size: clamp(28px, 5vw, 48px); line-height: 1.08; margin: 0 0 10px; }
+    .hero p { margin: 0 0 22px; color: var(--muted); font-size: 17px; }
+    .hero-actions { display: flex; gap: 12px; flex-wrap: wrap; }
+    .primary, .secondary, .ghost {
+      border-radius: 16px; padding: 14px 20px; font-weight: 800; border: 1px solid transparent;
+      min-height: 52px;
+    }
+    .primary { background: var(--accent); color: white; }
+    .primary:hover { filter: brightness(.96); }
+    .secondary { background: var(--accent-2); color: var(--accent); }
+    .ghost { background: white; color: var(--text); border-color: var(--line); }
+    .big-btn { font-size: 18px; min-width: 150px; }
+
+    .overall-card { display: grid; place-items: center; }
+    .progress-ring {
+      --value: 0;
+      width: 170px; height: 170px; border-radius: 50%;
+      display: grid; place-items: center;
+      background: conic-gradient(var(--accent) calc(var(--value) * 1%), #e5ece9 0);
+      position: relative;
+    }
+    .progress-ring::before {
+      content: ""; position: absolute; inset: 14px; border-radius: 50%; background: var(--panel);
+    }
+    .ring-content { position: relative; text-align: center; }
+    .ring-content strong { display: block; font-size: 42px; line-height: 1; }
+    .ring-content span { color: var(--muted); font-size: 14px; }
+
+    .section-title {
+      display: flex; align-items: center; justify-content: space-between; gap: 10px;
+      margin: 30px 2px 14px;
+    }
+    .section-title h3 { margin: 0; font-size: 21px; }
+    .section-title span { color: var(--muted); font-size: 14px; }
+
+    .mode-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; }
+    .mode-card {
+      text-align: right; border: 1px solid var(--line); background: var(--panel);
+      border-radius: var(--radius); padding: 22px; min-height: 150px;
+      box-shadow: 0 8px 24px rgba(24,56,46,.05);
+      transition: transform .18s ease, box-shadow .18s ease;
+    }
+    .mode-card:hover { transform: translateY(-3px); box-shadow: var(--shadow); }
+    .mode-icon { font-size: 34px; display: block; margin-bottom: 12px; }
+    .mode-card strong { display: block; font-size: 22px; margin-bottom: 5px; }
+    .mode-card small { color: var(--muted); font-size: 14px; }
+
+    .skills-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; }
+    .skill-card {
+      border: 1px solid var(--line); background: var(--panel); border-radius: 18px;
+      padding: 16px; min-height: 120px; text-align: right;
+    }
+    button.skill-card { width: 100%; }
+    .skill-card-head { display: flex; align-items: center; gap: 10px; margin-bottom: 15px; }
+    .skill-icon { font-size: 24px; width: 40px; height: 40px; display: grid; place-items: center; background: var(--panel-2); border-radius: 12px; }
+    .skill-name { font-weight: 800; }
+    .skill-meta { color: var(--muted); font-size: 12px; margin-top: 2px; }
+    .meter { height: 9px; border-radius: 999px; background: #e7eeeb; overflow: hidden; }
+    .meter > i { display: block; height: 100%; width: 0%; background: var(--accent); border-radius: inherit; transition: width .4s ease; }
+    .meter-row { display: flex; justify-content: space-between; align-items: center; gap: 8px; margin-top: 7px; font-size: 12px; color: var(--muted); }
+
+    .week-card {
+      background: var(--panel); border: 1px solid var(--line); border-radius: var(--radius);
+      padding: 18px; display: grid; grid-template-columns: repeat(7, 1fr); gap: 9px;
+    }
+    .day-chip {
+      min-height: 76px; border-radius: 14px; background: var(--panel-2); display: grid; place-items: center;
+      text-align: center; border: 1px solid transparent;
+    }
+    .day-chip b { font-size: 14px; }
+    .day-chip span { font-size: 21px; margin-top: 4px; }
+    .day-chip.done { background: #e2f4ed; color: var(--good); }
+    .day-chip.current { border-color: var(--accent); background: #f5fbf9; }
+    .day-chip.future { color: #98a39f; }
+
+    .module-shell { width: min(1060px, calc(100% - 32px)); margin: 0 auto; padding: 24px 0 48px; }
+    .subhead { display: flex; align-items: center; gap: 14px; margin-bottom: 26px; }
+    .subhead h2 { margin: 0; font-size: 28px; }
+    .module-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; }
+    .module-card {
+      border: 1px solid var(--line); border-radius: 22px; background: var(--panel); padding: 22px;
+      min-height: 180px; text-align: right; position: relative; overflow: hidden;
+      transition: transform .18s ease, box-shadow .18s ease;
+    }
+    .module-card:hover { transform: translateY(-3px); box-shadow: var(--shadow); }
+    .module-card .large-icon { font-size: 42px; }
+    .module-card h3 { margin: 16px 0 5px; font-size: 22px; }
+    .module-card p { margin: 0; color: var(--muted); font-size: 14px; }
+    .module-card .mini-progress { position: absolute; left: 18px; top: 18px; font-weight: 800; color: var(--accent); }
+    .smart-card { grid-column: 1 / -1; min-height: 130px; display: flex; align-items: center; justify-content: space-between; gap: 18px; }
+
+    /* Session */
+    .session-screen { background: #f4f7f6; }
+    .session-shell { width: min(1100px, calc(100% - 24px)); margin: 0 auto; padding: 14px 0 max(30px, env(safe-area-inset-bottom)); min-height: 100vh; min-height: 100dvh; display: flex; flex-direction: column; }
+    .session-top {
+      background: var(--panel); border: 1px solid var(--line); border-radius: 18px; padding: 10px 14px;
+      display: grid; grid-template-columns: auto 1fr auto; gap: 14px; align-items: center;
+      position: sticky; top: max(8px, env(safe-area-inset-top)); z-index: 10; box-shadow: 0 8px 24px rgba(24,56,46,.06);
+    }
+    .session-progress-wrap { min-width: 0; }
+    .session-info { display: flex; justify-content: space-between; gap: 10px; font-size: 13px; margin-bottom: 6px; }
+    .session-info strong { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .session-track { height: 8px; background: #e8eeec; border-radius: 999px; overflow: hidden; direction: ltr; }
+    .session-track i { display: block; width: 0%; height: 100%; background: var(--accent); border-radius: inherit; transition: width .3s ease; }
+    .timer-box { min-width: 62px; text-align: center; font-variant-numeric: tabular-nums; font-size: 20px; font-weight: 900; }
+    .timer-box.danger { color: var(--bad); animation: pulse .7s infinite alternate; }
+    @keyframes pulse { to { transform: scale(1.06); } }
+
+    .exercise-card {
+      flex: 1; background: var(--panel); border: 1px solid var(--line); border-radius: 26px;
+      margin-top: 14px; padding: clamp(18px, 3vw, 32px); min-height: 620px;
+      display: flex; flex-direction: column; align-items: center; justify-content: flex-start;
+      box-shadow: 0 12px 30px rgba(24,56,46,.06);
+      overflow: hidden;
+    }
+    .question-title { text-align: center; font-size: clamp(22px, 3vw, 32px); margin: 4px 0 8px; min-height: 40px; }
+    .question-sub { color: var(--muted); text-align: center; min-height: 24px; margin-bottom: 12px; }
+    .visual-wrap { width: min(700px, 100%); display: grid; place-items: center; margin: 4px auto 18px; }
+    canvas.main-canvas { width: min(640px, 100%); height: auto; border-radius: 18px; border: 1px solid var(--line); background: #f8fbfa; touch-action: manipulation; }
+    .answers { width: min(720px, 100%); display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-top: auto; }
+    .answer-btn {
+      border: 1px solid var(--line); background: var(--panel-2); color: var(--text); border-radius: 16px;
+      min-height: 66px; padding: 10px; font-size: 18px; font-weight: 800;
+      transition: transform .12s ease, border-color .12s ease, background .12s ease;
+    }
+    .answer-btn:hover { transform: translateY(-2px); border-color: rgba(23,107,85,.45); }
+    .answer-btn.correct { background: #dff4e9; border-color: var(--good); color: var(--good); }
+    .answer-btn.wrong { background: #fae4e4; border-color: var(--bad); color: var(--bad); }
+    .answer-btn:disabled { cursor: default; }
+    .compass-grid { width: min(430px, 100%); display: grid; grid-template-columns: repeat(3, 1fr); gap: 9px; direction: ltr; }
+    .compass-grid .answer-btn { min-height: 74px; font-size: 24px; }
+    .compass-grid .center-cell { display: grid; place-items: center; color: var(--muted); font-size: 28px; }
+    .degree-btn { font-variant-numeric: tabular-nums; direction: ltr; }
+
+    .rotation-controls { display: flex; align-items: center; justify-content: center; gap: 12px; flex-wrap: wrap; margin-top: auto; }
+    .round-control {
+      width: 70px; height: 70px; border-radius: 50%; border: 1px solid var(--line); background: var(--panel-2);
+      font-size: 30px; font-weight: 900;
+    }
+    .confirm-control { min-width: 150px; height: 60px; }
+
+    .memory-options { width: min(820px, 100%); display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; }
+    .memory-choice { border: 2px solid var(--line); background: white; border-radius: 16px; padding: 6px; }
+    .memory-choice:hover { border-color: var(--accent); }
+    .memory-choice canvas { width: 100%; height: auto; display: block; border-radius: 11px; }
+    .reveal-count { font-size: 64px; font-weight: 900; color: var(--accent); margin-top: 12px; font-variant-numeric: tabular-nums; }
+
+    .sequence-bar { display: flex; gap: 9px; flex-wrap: wrap; justify-content: center; direction: ltr; margin: 8px 0 18px; }
+    .move-chip { min-width: 68px; padding: 10px 13px; border-radius: 14px; background: var(--accent-2); color: var(--accent); font-size: 24px; font-weight: 900; text-align: center; }
+    .sequence-hidden { filter: blur(12px); opacity: .20; }
+
+    .lesson-card { width: min(820px, 100%); margin: auto; text-align: center; }
+    .lesson-card h2 { font-size: 34px; margin: 8px 0; }
+    .lesson-card p { color: var(--muted); font-size: 18px; margin: 8px 0 22px; }
+    .lesson-visual {
+      min-height: 310px; border: 1px solid var(--line); border-radius: 24px; background: var(--panel-2);
+      display: grid; place-items: center; padding: 22px; margin-bottom: 20px;
+    }
+    .lesson-compass { width: min(340px, 90%); aspect-ratio: 1; position: relative; border: 4px solid var(--accent); border-radius: 50%; }
+    .lesson-compass .axis { position: absolute; font-size: 24px; font-weight: 900; color: var(--accent); }
+    .lesson-compass .n { top: 8px; left: 50%; transform: translateX(-50%); }
+    .lesson-compass .s { bottom: 8px; left: 50%; transform: translateX(-50%); }
+    .lesson-compass .e { right: 10px; top: 50%; transform: translateY(-50%); }
+    .lesson-compass .w { left: 10px; top: 50%; transform: translateY(-50%); }
+    .lesson-compass .needle { position: absolute; left: 50%; top: 50%; width: 8px; height: 42%; background: var(--accent); transform: translate(-50%, -100%); transform-origin: 50% 100%; clip-path: polygon(50% 0, 100% 25%, 70% 100%, 30% 100%, 0 25%); }
+    .lesson-grid { width: min(440px, 100%); aspect-ratio: 1.35; display: grid; grid-template-columns: repeat(5, 1fr); border-right: 2px solid var(--text); border-bottom: 2px solid var(--text); direction: ltr; position: relative; }
+    .lesson-grid i { border-top: 1px solid #aebbb6; border-left: 1px solid #aebbb6; }
+    .lesson-arrow-x, .lesson-arrow-y { position: absolute; font-size: 42px; font-weight: 900; color: var(--accent); }
+    .lesson-arrow-x { bottom: 12%; left: 18%; animation: moveX 1.7s infinite; }
+    .lesson-arrow-y { left: 66%; bottom: 12%; animation: moveY 1.7s 1.7s infinite; }
+    @keyframes moveX { 0% { transform: translateX(0); opacity: .2; } 50% { transform: translateX(100px); opacity: 1; } 100% { transform: translateX(100px); opacity: .2; } }
+    @keyframes moveY { 0% { transform: translateY(0); opacity: .2; } 50% { transform: translateY(-100px); opacity: 1; } 100% { transform: translateY(-100px); opacity: .2; } }
+    .lesson-degrees { width: min(420px, 100%); aspect-ratio: 1; border-radius: 50%; border: 3px solid var(--accent); position: relative; display: grid; place-items: center; font-weight: 900; font-size: 26px; }
+    .deg { position: absolute; }
+    .deg.d0 { top: 10px; }
+    .deg.d90 { left: 10px; }
+    .deg.d180 { bottom: 10px; }
+    .deg.d270 { right: 10px; }
+    .lesson-degrees .line { width: 6px; height: 40%; background: var(--accent); position: absolute; top: 10%; left: calc(50% - 3px); transform-origin: 50% 100%; transform: rotate(45deg); }
+    .lesson-symbols { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; width: 100%; }
+    .lesson-symbol { background: white; border: 1px solid var(--line); border-radius: 18px; padding: 14px 8px; }
+    .lesson-symbol canvas { width: 100%; height: auto; }
+    .lesson-symbol b { display: block; margin-top: 8px; }
+    .memory-demo { display: flex; align-items: center; gap: 20px; font-size: 76px; direction: ltr; }
+    .memory-demo .cover { animation: coverDemo 2.8s infinite; }
+    @keyframes coverDemo { 0%,35% { opacity: 0; transform: scale(.7); } 55%,100% { opacity: 1; transform: scale(1); } }
+    .route-demo { display: flex; gap: 10px; font-size: 50px; direction: ltr; }
+    .route-demo span { animation: routePulse 2.4s infinite; }
+    .route-demo span:nth-child(2) { animation-delay: .35s; }
+    .route-demo span:nth-child(3) { animation-delay: .7s; }
+    @keyframes routePulse { 0%,100% { transform: translateY(0); opacity: .35; } 30% { transform: translateY(-12px); opacity: 1; } }
+    .rotate-demo { position: relative; width: min(390px, 100%); aspect-ratio: 1.35; }
+    .rotate-demo .map-paper { position: absolute; inset: 35px; border: 3px solid var(--accent); border-radius: 18px; background: white; transform: rotate(35deg); animation: alignMap 3s infinite; display: grid; place-items: center; font-size: 46px; }
+    @keyframes alignMap { 0%,25% { transform: rotate(35deg); } 60%,85% { transform: rotate(0deg); } 100% { transform: rotate(35deg); } }
+
+    .feedback-toast {
+      position: fixed; left: 50%; bottom: 28px; transform: translateX(-50%) translateY(30px);
+      min-width: 230px; max-width: calc(100% - 30px); padding: 15px 22px; border-radius: 16px;
+      color: white; font-weight: 900; text-align: center; z-index: 50; opacity: 0; pointer-events: none;
+      transition: .18s ease;
+    }
+    .feedback-toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+    .feedback-toast.good { background: var(--good); }
+    .feedback-toast.bad { background: var(--bad); }
+
+    .modal-backdrop {
+      position: fixed; inset: 0; background: rgba(13,31,25,.48); backdrop-filter: blur(4px);
+      display: none; place-items: center; z-index: 100; padding: 18px;
+    }
+    .modal-backdrop.show { display: grid; }
+    .modal {
+      width: min(620px, 100%); background: white; border-radius: 26px; padding: 28px;
+      box-shadow: 0 24px 70px rgba(0,0,0,.24); text-align: center;
+    }
+    .modal h2 { margin: 0 0 8px; font-size: 30px; }
+    .modal p { color: var(--muted); margin: 0 0 20px; }
+    .stats-row { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin: 20px 0; }
+    .stat { background: var(--panel-2); border-radius: 16px; padding: 16px 8px; }
+    .stat strong { display: block; font-size: 27px; }
+    .stat span { color: var(--muted); font-size: 13px; }
+    .modal-actions { display: flex; justify-content: center; gap: 10px; flex-wrap: wrap; }
+    .result-skills { display: grid; gap: 8px; text-align: right; margin: 18px 0; }
+    .result-skill { display: grid; grid-template-columns: 100px 1fr 46px; align-items: center; gap: 10px; }
+    .result-skill b { font-size: 13px; }
+
+    .settings-panel { display: none; position: fixed; inset: 0; background: rgba(13,31,25,.42); z-index: 90; padding: 18px; }
+    .settings-panel.show { display: flex; align-items: flex-start; justify-content: center; }
+    .settings-card { width: min(520px, 100%); margin-top: 8vh; background: white; border-radius: 24px; padding: 24px; box-shadow: var(--shadow); }
+    .settings-card h2 { margin-top: 0; }
+    .settings-row { display: flex; justify-content: space-between; align-items: center; gap: 12px; padding: 14px 0; border-bottom: 1px solid var(--line); }
+    .danger-btn { background: #fff0f0; color: var(--bad); border: 1px solid #f0caca; border-radius: 14px; padding: 10px 14px; font-weight: 800; }
+
+    .sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0,0,0,0); white-space: nowrap; border: 0; }
+    .hidden { display: none !important; }
+
+    @media (max-width: 880px) {
+      .hero { grid-template-columns: 1fr; }
+      .overall-card { grid-row: 1; }
+      .mode-grid { grid-template-columns: 1fr; }
+      .skills-grid { grid-template-columns: repeat(2, 1fr); }
+      .module-grid { grid-template-columns: repeat(2, 1fr); }
+      .smart-card { grid-column: 1 / -1; }
+      .answers { grid-template-columns: repeat(2, 1fr); }
+      .lesson-symbols { grid-template-columns: repeat(2, 1fr); }
+    }
+    @media (max-width: 580px) {
+      .shell, .module-shell { width: min(100% - 20px, 1180px); padding-top: 12px; }
+      .topbar { align-items: flex-start; }
+      .brand small { max-width: 220px; }
+      .hero { border-radius: 22px; padding: 20px; }
+      .hero-actions > * { flex: 1; }
+      .skills-grid { grid-template-columns: 1fr; }
+      .week-card { padding: 10px; gap: 5px; }
+      .day-chip { min-height: 62px; }
+      .day-chip b { font-size: 11px; }
+      .module-grid { grid-template-columns: 1fr; }
+      .smart-card { display: block; }
+      .session-top { grid-template-columns: auto 1fr auto; }
+      .exercise-card { min-height: calc(100vh - 105px); border-radius: 20px; padding: 16px 12px; }
+      .answers { grid-template-columns: repeat(2, 1fr); }
+      .memory-options { gap: 7px; }
+      .stats-row { grid-template-columns: 1fr; }
+      .progress-ring { width: 145px; height: 145px; }
+      .result-skill { grid-template-columns: 78px 1fr 40px; }
+    }
+
+
+    /* Phone and touch refinements */
+    @media (hover: none) and (pointer: coarse) {
+      .mode-card:hover, .module-card:hover, .answer-btn:hover, .memory-choice:hover, .primary:hover {
+        transform: none;
+        filter: none;
+        box-shadow: none;
+      }
+      button:active { transform: scale(.985); }
+      .answer-btn, .primary, .secondary, .ghost, .icon-btn, .round-control, .memory-choice { min-height: 48px; }
+    }
+
+    @media (max-width: 580px) {
+      body { background: #f4f7f6; }
+      .shell, .module-shell {
+        padding-left: max(0px, env(safe-area-inset-left));
+        padding-right: max(0px, env(safe-area-inset-right));
+        padding-bottom: max(28px, env(safe-area-inset-bottom));
+      }
+      .brand { gap: 9px; }
+      .brand-mark { width: 42px; height: 42px; border-radius: 13px; font-size: 24px; }
+      .brand h1 { font-size: 21px; }
+      .brand small { font-size: 12px; max-width: 190px; }
+      .hero h2 { font-size: clamp(27px, 9vw, 38px); }
+      .hero p { font-size: 15px; margin-bottom: 16px; }
+      .hero-actions { display: grid; grid-template-columns: 1fr 1fr; width: 100%; }
+      .hero-actions > * { min-width: 0; width: 100%; padding-inline: 10px; }
+      .mode-card, .module-card { min-height: 132px; padding: 18px; }
+      .week-card { grid-template-columns: repeat(7, 52px); overflow-x: auto; justify-content: start; direction: rtl; scrollbar-width: none; }
+      .week-card::-webkit-scrollbar { display: none; }
+      .day-chip { scroll-snap-align: start; }
+      .session-shell {
+        width: 100%;
+        padding: max(6px, env(safe-area-inset-top)) max(6px, env(safe-area-inset-right)) max(12px, env(safe-area-inset-bottom)) max(6px, env(safe-area-inset-left));
+      }
+      .session-top { top: max(4px, env(safe-area-inset-top)); border-radius: 16px; padding: 8px; gap: 8px; }
+      .session-top .icon-btn { width: 42px; height: 42px; }
+      .timer-box { min-width: 52px; font-size: 17px; }
+      .session-info { font-size: 12px; }
+      .exercise-card {
+        min-height: calc(100vh - 78px);
+        min-height: calc(100dvh - 78px - env(safe-area-inset-top) - env(safe-area-inset-bottom));
+        margin-top: 7px;
+        border-radius: 17px;
+        padding: 13px 10px 16px;
+      }
+      .question-title { font-size: clamp(20px, 6.4vw, 27px); line-height: 1.16; min-height: 30px; margin-top: 1px; }
+      .question-sub { font-size: 13px; min-height: 20px; margin-bottom: 7px; }
+      .visual-wrap { margin: 2px auto 9px; }
+      canvas.main-canvas { width: auto; max-width: 100%; max-height: 48dvh; border-radius: 14px; }
+      .answers { gap: 7px; }
+      .answer-btn { min-height: 58px; padding: 8px 6px; border-radius: 14px; font-size: 16px; }
+      .compass-grid { gap: 7px; }
+      .compass-grid .answer-btn { min-height: 62px; font-size: 22px; }
+      .rotation-controls { gap: 9px; }
+      .round-control { width: 62px; height: 62px; font-size: 27px; }
+      .confirm-control { min-width: 132px; height: 56px; }
+      .memory-options { grid-template-columns: repeat(2, minmax(0,1fr)); }
+      .sequence-bar { gap: 6px; margin: 5px 0 9px; }
+      .move-chip { min-width: 57px; padding: 8px 9px; font-size: 21px; }
+      .lesson-card h2 { font-size: 28px; }
+      .lesson-card p { font-size: 16px; margin-bottom: 14px; }
+      .lesson-visual { min-height: 250px; padding: 14px; border-radius: 18px; }
+      .modal-backdrop, .settings-panel { padding: max(10px, env(safe-area-inset-top)) max(10px, env(safe-area-inset-right)) max(10px, env(safe-area-inset-bottom)) max(10px, env(safe-area-inset-left)); }
+      .modal, .settings-card { border-radius: 20px; padding: 20px 15px; max-height: 92dvh; overflow-y: auto; }
+      .feedback-toast { bottom: max(16px, env(safe-area-inset-bottom)); }
+    }
+
+    @media (max-height: 520px) and (orientation: landscape) {
+      .session-shell { padding-top: 4px; }
+      .session-top { position: relative; top: 0; }
+      .exercise-card { min-height: 0; padding: 8px 10px; }
+      .question-title { font-size: 20px; min-height: 24px; margin-bottom: 2px; }
+      .question-sub { min-height: 16px; margin-bottom: 3px; font-size: 12px; }
+      .visual-wrap { margin: 0 auto 5px; }
+      canvas.main-canvas { max-height: 54dvh; width: auto; }
+      .answers { grid-template-columns: repeat(4, 1fr); gap: 6px; }
+      .answer-btn { min-height: 48px; font-size: 15px; }
+      .compass-grid .answer-btn { min-height: 48px; }
+      .rotation-controls { margin-top: 2px; }
+      .round-control { width: 52px; height: 52px; }
+      .confirm-control { height: 50px; }
+    }
+
+  </style>
+</head>
+<body>
+<div class="app">
+  <main id="homeScreen" class="screen active">
+    <div class="shell">
+      <header class="topbar">
+        <div class="brand">
+          <div class="brand-mark" aria-hidden="true">⌖</div>
+          <div>
+            <h1>מאמן ניווט חזותי</h1>
+            <small>אימון כללי למי שמתחיל מאפס</small>
+          </div>
+        </div>
+        <button class="icon-btn" id="settingsBtn" aria-label="הגדרות" title="הגדרות">⚙</button>
+      </header>
+
+      <section class="hero">
+        <div>
+          <h2 id="todayTitle">יום 1: כיוונים</h2>
+          <p id="todaySub">התחלה קצרה: מצפן, כיוונים וסיבוב מפה.</p>
+          <div class="hero-actions">
+            <button class="primary big-btn" id="todayStartBtn">התחל אימון</button>
+            <button class="secondary big-btn" data-open-mode="test">סימולציה</button>
+          </div>
+        </div>
+        <div class="overall-card">
+          <div class="progress-ring" id="overallRing" style="--value:0">
+            <div class="ring-content"><strong id="overallScore">0</strong><span>התקדמות</span></div>
+          </div>
+        </div>
+      </section>
+
+      <div class="section-title"><h3>מצבי עבודה</h3><span>ללא התקנה · נשמר במכשיר</span></div>
+      <section class="mode-grid">
+        <button class="mode-card" data-open-mode="learn">
+          <span class="mode-icon">◉</span><strong>לימוד</strong><small>הדגמה קצרה ואז 5 תרגילים</small>
+        </button>
+        <button class="mode-card" data-open-mode="practice">
+          <span class="mode-icon">⌖</span><strong>תרגול</strong><small>10–15 שאלות עם תיקון מיידי</small>
+        </button>
+        <button class="mode-card" data-open-mode="test">
+          <span class="mode-icon">⏱</span><strong>מבחן</strong><small>25 שאלות, זמן וללא משוב באמצע</small>
+        </button>
+      </section>
+
+      <div class="section-title"><h3>רמת שליטה</h3><span id="totalQuestionsLabel">0 תרגילים</span></div>
+      <section class="skills-grid" id="skillsProgressGrid"></section>
+
+      <div class="section-title"><h3>מסלול לשבוע</h3><span>15–20 דקות ביום</span></div>
+      <section class="week-card" id="weekStrip"></section>
+    </div>
+  </main>
+
+  <main id="modulesScreen" class="screen">
+    <div class="module-shell">
+      <header class="subhead">
+        <button class="icon-btn" id="modulesBackBtn" aria-label="חזרה">←</button>
+        <div><h2 id="modulesTitle">בחר נושא</h2><div id="modulesSubtitle" style="color:var(--muted);margin-top:4px"></div></div>
+      </header>
+      <section class="module-grid" id="moduleGrid"></section>
+    </div>
+  </main>
+
+  <main id="sessionScreen" class="screen session-screen">
+    <div class="session-shell">
+      <header class="session-top">
+        <button class="icon-btn" id="sessionExitBtn" aria-label="יציאה">×</button>
+        <div class="session-progress-wrap">
+          <div class="session-info"><strong id="sessionLabel">תרגול</strong><span id="questionCounter">1/10</span></div>
+          <div class="session-track"><i id="sessionProgress"></i></div>
+        </div>
+        <div class="timer-box" id="timerBox">0:00</div>
+      </header>
+      <section class="exercise-card" id="exerciseMount"></section>
+    </div>
+  </main>
+</div>
+
+<div class="feedback-toast" id="feedbackToast" role="status" aria-live="polite"></div>
+
+<div class="modal-backdrop" id="progressModal">
+  <div class="modal">
+    <h2>נקודת התקדמות</h2>
+    <p id="progressMessage">ממשיכים.</p>
+    <div class="stats-row">
+      <div class="stat"><strong id="pulseAccuracy">0%</strong><span>דיוק</span></div>
+      <div class="stat"><strong id="pulseSpeed">0.0</strong><span>שניות בממוצע</span></div>
+      <div class="stat"><strong id="pulseMastery">0%</strong><span>שליטה בנושא</span></div>
+    </div>
+    <div class="modal-actions"><button class="primary" id="continueBtn">המשך</button></div>
+  </div>
+</div>
+
+<div class="modal-backdrop" id="resultModal">
+  <div class="modal">
+    <h2 id="resultTitle">סיימת</h2>
+    <p id="resultMessage"></p>
+    <div class="stats-row">
+      <div class="stat"><strong id="resultScore">0%</strong><span>ציון</span></div>
+      <div class="stat"><strong id="resultCorrect">0/0</strong><span>נכונות</span></div>
+      <div class="stat"><strong id="resultTime">0.0</strong><span>שניות לשאלה</span></div>
+    </div>
+    <div class="result-skills" id="resultSkills"></div>
+    <div class="modal-actions">
+      <button class="primary" id="repeatBtn">שוב</button>
+      <button class="ghost" id="resultHomeBtn">מסך ראשי</button>
+    </div>
+  </div>
+</div>
+
+<div class="settings-panel" id="settingsPanel">
+  <div class="settings-card">
+    <div style="display:flex;align-items:center;justify-content:space-between;gap:12px">
+      <h2>הגדרות</h2><button class="icon-btn" id="settingsCloseBtn" aria-label="סגור">×</button>
+    </div>
+    <div class="settings-row"><span>מסך מלא</span><button class="ghost" id="fullscreenBtn">פתח</button></div>
+    <div class="settings-row"><span>איפוס כל ההתקדמות</span><button class="danger-btn" id="resetBtn">איפוס</button></div>
+    <p style="color:var(--muted);font-size:13px;line-height:1.5;margin-bottom:0">המידע נשמר מקומית במכשיר ובדפדפן הנוכחיים. זהו כלי אימון כללי ולא מבחן רשמי.</p>
+  </div>
+</div>
+
+<script>
+(() => {
+  'use strict';
+
+  const STORAGE_KEY = 'visualNavigationTrainer.v1';
+  const VERSION = 1;
+
+  const SKILLS = [
+    { id: 'directions', name: 'כיוונים', icon: '↗', hint: 'מצפן ו־8 כיוונים' },
+    { id: 'rotation', name: 'סיבוב מפה', icon: '⟳', hint: 'יישור הצפון' },
+    { id: 'coordinates', name: 'קואורדינטות', icon: '▦', hint: 'ימינה ואז למעלה' },
+    { id: 'azimuth', name: 'אזימוט', icon: '◎', hint: 'מעלות וכיוון' },
+    { id: 'contours', name: 'קווי גובה', icon: '◌', hint: 'צורות ומדרונות' },
+    { id: 'memory', name: 'זיכרון מפה', icon: '◫', hint: 'זיהוי מהיר' },
+    { id: 'route', name: 'רצף תנועה', icon: '⇢', hint: 'נקודת סיום' }
+  ];
+  const SKILL_BY_ID = Object.fromEntries(SKILLS.map(s => [s.id, s]));
+
+  const DAY_PLAN = [
+    { title: 'כיוונים וסיבוב', sub: 'מצפן, 8 כיוונים ויישור מפה.', skills: ['directions', 'rotation'], icon: '↗' },
+    { title: 'קואורדינטות', sub: 'קודם ימינה, אחר כך למעלה.', skills: ['coordinates'], icon: '▦' },
+    { title: 'אזימוט ותנועה', sub: 'מעלות, חצים ונקודת סיום.', skills: ['azimuth', 'route'], icon: '◎' },
+    { title: 'קווי גובה', sub: 'פסגה, אוכף, ואדי ושלוחה.', skills: ['contours'], icon: '◌' },
+    { title: 'זיכרון מפה', sub: 'קליטה מהירה ורצף חזותי.', skills: ['memory', 'route'], icon: '◫' },
+    { title: 'תרגול מעורב', sub: 'חיזוק אוטומטי של הנושאים החלשים.', skills: ['mixed'], icon: '⌖' },
+    { title: 'שתי סימולציות', sub: 'בלי חומר חדש. דיוק וקצב.', skills: ['test'], icon: '⏱' }
+  ];
+
+  const DIRS = [
+    { id:'N', dx:0, dy:1, arrow:'↑', label:'צפון' },
+    { id:'NE', dx:1, dy:1, arrow:'↗', label:'צפון־מזרח' },
+    { id:'E', dx:1, dy:0, arrow:'→', label:'מזרח' },
+    { id:'SE', dx:1, dy:-1, arrow:'↘', label:'דרום־מזרח' },
+    { id:'S', dx:0, dy:-1, arrow:'↓', label:'דרום' },
+    { id:'SW', dx:-1, dy:-1, arrow:'↙', label:'דרום־מערב' },
+    { id:'W', dx:-1, dy:0, arrow:'←', label:'מערב' },
+    { id:'NW', dx:-1, dy:1, arrow:'↖', label:'צפון־מערב' }
+  ];
+
+  const els = {
+    home: document.getElementById('homeScreen'),
+    modules: document.getElementById('modulesScreen'),
+    session: document.getElementById('sessionScreen'),
+    moduleGrid: document.getElementById('moduleGrid'),
+    mount: document.getElementById('exerciseMount'),
+    feedback: document.getElementById('feedbackToast'),
+    progressModal: document.getElementById('progressModal'),
+    resultModal: document.getElementById('resultModal'),
+    settingsPanel: document.getElementById('settingsPanel')
+  };
+
+  let state = loadState();
+  let selectedMode = 'practice';
+  let session = null;
+  let currentQuestion = null;
+  let questionToken = 0;
+  let timerHandle = null;
+  let toastHandle = null;
+  let pendingContinue = null;
+
+  function todayKey() {
+    const d = new Date();
+    return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+  }
+
+  function blankSkill() {
+    return { attempts: 0, correct: 0, recent: [], times: [], level: 1, streak: 0, wrongStreak: 0 };
+  }
+
+  function defaultState() {
+    const skills = {};
+    SKILLS.forEach(s => skills[s.id] = blankSkill());
+    return { version: VERSION, firstUse: todayKey(), totalQuestions: 0, totalCorrect: 0, skills, daily: {} };
+  }
+
+  function loadState() {
+    try {
+      const raw = localStorage.getItem(STORAGE_KEY);
+      if (!raw) return defaultState();
+      const parsed = JSON.parse(raw);
+      if (!parsed || parsed.version !== VERSION) return defaultState();
+      const base = defaultState();
+      SKILLS.forEach(s => base.skills[s.id] = Object.assign(blankSkill(), parsed.skills?.[s.id] || {}));
+      return Object.assign(base, parsed, { skills: base.skills, daily: parsed.daily || {} });
+    } catch (e) {
+      return defaultState();
+    }
+  }
+
+  function saveState() {
+    try { localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); } catch (e) { /* local-only fallback */ }
+  }
+
+  function clamp(v, min, max) { return Math.max(min, Math.min(max, v)); }
+  function randInt(min, max) { return Math.floor(Math.random() * (max - min + 1)) + min; }
+  function choice(arr) { return arr[Math.floor(Math.random() * arr.length)]; }
+  function shuffle(arr) {
+    const out = arr.slice();
+    for (let i = out.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [out[i], out[j]] = [out[j], out[i]];
+    }
+    return out;
+  }
+  function mean(arr) { return arr.length ? arr.reduce((a,b)=>a+b,0) / arr.length : 0; }
+  function escapeHtml(s) { return String(s).replace(/[&<>'"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[c])); }
+
+  function bindCanvasTap(canvas, handler) {
+    if (window.PointerEvent) {
+      canvas.addEventListener('pointerup', ev => {
+        if (ev.pointerType === 'mouse' && ev.button !== 0) return;
+        handler(ev);
+      }, { passive: true });
+      return;
+    }
+    canvas.addEventListener('click', handler);
+    canvas.addEventListener('touchend', ev => {
+      const touch = ev.changedTouches && ev.changedTouches[0];
+      if (!touch) return;
+      ev.preventDefault();
+      handler({ clientX: touch.clientX, clientY: touch.clientY });
+    }, { passive: false });
+  }
+
+  function daysSince(dateString) {
+    const start = new Date(dateString + 'T00:00:00');
+    const now = new Date(); now.setHours(0,0,0,0);
+    return Math.max(0, Math.floor((now - start) / 86400000));
+  }
+
+  function currentDayIndex() { return clamp(daysSince(state.firstUse), 0, 6); }
+
+  function skillMastery(skillId) {
+    const s = state.skills[skillId];
+    if (!s || !s.attempts) return 0;
+    const recentAccuracy = mean(s.recent);
+    const avgTime = mean(s.times);
+    const speed = avgTime ? clamp((15000 - avgTime) / 10000, 0, 1) : 0;
+    const volume = clamp(s.attempts / 18, 0, 1);
+    const raw = recentAccuracy * 80 + speed * 10 + volume * 10;
+    const confidence = .35 + .65 * volume;
+    return Math.round(clamp(raw * confidence, 0, 100));
+  }
+
+  function overallMastery() {
+    const vals = SKILLS.map(s => skillMastery(s.id));
+    return Math.round(mean(vals));
+  }
+
+  function recordResult(skillId, correct, elapsedMs) {
+    const s = state.skills[skillId];
+    if (!s) return;
+    s.attempts += 1;
+    if (correct) s.correct += 1;
+    s.recent.push(correct ? 1 : 0);
+    if (s.recent.length > 20) s.recent.shift();
+    s.times.push(clamp(elapsedMs, 500, 30000));
+    if (s.times.length > 20) s.times.shift();
+
+    if (correct) {
+      s.streak += 1; s.wrongStreak = 0;
+      if (s.streak >= 3) { s.level = clamp(s.level + 1, 1, 3); s.streak = 0; }
+    } else {
+      s.wrongStreak += 1; s.streak = 0;
+      if (s.wrongStreak >= 2) { s.level = clamp(s.level - 1, 1, 3); s.wrongStreak = 0; }
+    }
+
+    state.totalQuestions += 1;
+    if (correct) state.totalCorrect += 1;
+    const key = todayKey();
+    state.daily[key] ||= { questions: 0, correct: 0 };
+    state.daily[key].questions += 1;
+    if (correct) state.daily[key].correct += 1;
+    saveState();
+  }
+
+  function showScreen(which) {
+    [els.home, els.modules, els.session].forEach(x => x.classList.remove('active'));
+    which.classList.add('active');
+    window.scrollTo(0,0);
+  }
+
+  function renderHome() {
+    const overall = overallMastery();
+    document.getElementById('overallRing').style.setProperty('--value', overall);
+    document.getElementById('overallScore').textContent = overall;
+    document.getElementById('totalQuestionsLabel').textContent = `${state.totalQuestions} תרגילים`;
+
+    const day = currentDayIndex();
+    const plan = DAY_PLAN[day];
+    document.getElementById('todayTitle').textContent = `יום ${day+1}: ${plan.title}`;
+    document.getElementById('todaySub').textContent = plan.sub;
+
+    const grid = document.getElementById('skillsProgressGrid');
+    grid.innerHTML = SKILLS.map(s => {
+      const m = skillMastery(s.id);
+      const data = state.skills[s.id];
+      return `<button class="skill-card" data-direct-skill="${s.id}">
+        <div class="skill-card-head"><span class="skill-icon">${s.icon}</span><div><div class="skill-name">${s.name}</div><div class="skill-meta">רמה ${data.level} · ${data.attempts} ניסיונות</div></div></div>
+        <div class="meter"><i style="width:${m}%"></i></div><div class="meter-row"><span>שליטה</span><b>${m}%</b></div>
+      </button>`;
+    }).join('');
+
+    const week = document.getElementById('weekStrip');
+    const start = new Date(state.firstUse + 'T00:00:00');
+    week.innerHTML = DAY_PLAN.map((p, i) => {
+      const d = new Date(start); d.setDate(start.getDate() + i);
+      const key = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+      const done = (state.daily[key]?.questions || 0) >= 15;
+      const cls = done ? 'done' : i === day ? 'current' : i > day ? 'future' : '';
+      const mark = done ? '✓' : i === day ? '●' : '○';
+      return `<div class="day-chip ${cls}" title="${escapeHtml(p.title)}"><b>יום ${i+1}</b><span>${mark}</span></div>`;
+    }).join('');
+
+    document.querySelectorAll('[data-direct-skill]').forEach(btn => btn.onclick = () => {
+      selectedMode = 'practice';
+      startSession('practice', btn.dataset.directSkill);
+    });
+  }
+
+  function openMode(mode) {
+    selectedMode = mode;
+    if (mode === 'test') {
+      startSession('test', 'mixed');
+      return;
+    }
+    renderModules(mode);
+    showScreen(els.modules);
+  }
+
+  function renderModules(mode) {
+    const isLearn = mode === 'learn';
+    document.getElementById('modulesTitle').textContent = isLearn ? 'בחר נושא ללימוד' : 'בחר נושא לתרגול';
+    document.getElementById('modulesSubtitle').textContent = isLearn ? 'הדגמה קצרה + 5 תרגילים' : '10 תרגילים עם תיקון מיידי';
+    const smart = !isLearn ? `<button class="module-card smart-card" data-module="mixed">
+      <div><span class="large-icon">⌖</span><h3>תרגול חכם</h3><p>בוחר יותר שאלות מהנושאים החלשים</p></div>
+      <span class="primary" style="display:inline-grid;place-items:center">התחל</span>
+    </button>` : '';
+    els.moduleGrid.innerHTML = smart + SKILLS.map(s => `<button class="module-card" data-module="${s.id}">
+      <span class="mini-progress">${skillMastery(s.id)}%</span><span class="large-icon">${s.icon}</span>
+      <h3>${s.name}</h3><p>${s.hint}</p>
+    </button>`).join('');
+    els.moduleGrid.querySelectorAll('[data-module]').forEach(btn => btn.onclick = () => startSession(mode, btn.dataset.module));
+  }
+
+  function recommendedTarget() {
+    const plan = DAY_PLAN[currentDayIndex()];
+    if (plan.skills[0] === 'test') return { mode:'test', skill:'mixed' };
+    if (plan.skills[0] === 'mixed') return { mode:'practice', skill:'mixed' };
+    const skill = plan.skills.slice().sort((a,b)=>skillMastery(a)-skillMastery(b))[0];
+    return { mode: state.skills[skill].attempts < 5 ? 'learn' : 'practice', skill };
+  }
+
+  function startSession(mode, skillId) {
+    clearQuestionTimer();
+    questionToken += 1;
+    const total = mode === 'learn' ? 5 : mode === 'test' ? 25 : skillId === 'mixed' ? 15 : 10;
+    session = {
+      mode, skillId, total, index: 0, correct: 0, results: [],
+      startedAt: performance.now(), questionStartedAt: performance.now(), lastQuestionSkill: null,
+      lessonShown: false
+    };
+    showScreen(els.session);
+    document.getElementById('sessionLabel').textContent = mode === 'learn' ? `לימוד · ${SKILL_BY_ID[skillId].name}` : mode === 'test' ? 'סימולציה' : skillId === 'mixed' ? 'תרגול חכם' : `תרגול · ${SKILL_BY_ID[skillId].name}`;
+    updateSessionTop();
+    if (mode === 'learn') showLesson(skillId); else nextQuestion();
+  }
+
+  function updateSessionTop() {
+    if (!session) return;
+    const shownIndex = Math.min(session.index + 1, session.total);
+    document.getElementById('questionCounter').textContent = `${shownIndex}/${session.total}`;
+    document.getElementById('sessionProgress').style.width = `${session.index / session.total * 100}%`;
+  }
+
+  function showLesson(skillId) {
+    session.lessonShown = true;
+    const s = SKILL_BY_ID[skillId];
+    let visual = '';
+    let line = '';
+    if (skillId === 'directions') {
+      line = 'הצפון למעלה. מזהים את כיוון היעד.';
+      visual = `<div class="lesson-compass"><span class="axis n">צ</span><span class="axis s">ד</span><span class="axis e">מז</span><span class="axis w">מע</span><i class="needle"></i></div>`;
+    } else if (skillId === 'rotation') {
+      line = 'מסובבים עד שחץ הצפון פונה למעלה.';
+      visual = `<div class="rotate-demo"><div class="map-paper">▲ N</div></div>`;
+    } else if (skillId === 'coordinates') {
+      line = 'קודם ימינה, אחר כך למעלה.';
+      visual = `<div class="lesson-grid">${'<i></i>'.repeat(25)}<span class="lesson-arrow-x">→</span><span class="lesson-arrow-y">↑</span></div>`;
+    } else if (skillId === 'azimuth') {
+      line = '0° צפון · 90° מזרח · 180° דרום · 270° מערב';
+      visual = `<div class="lesson-degrees"><span class="deg d0">0°</span><span class="deg d90">90°</span><span class="deg d180">180°</span><span class="deg d270">270°</span><i class="line"></i></div>`;
+    } else if (skillId === 'contours') {
+      line = 'קווים צפופים = תלול. צורות סגורות = גובה.';
+      visual = `<div class="lesson-symbols">
+        ${['hill','saddle','valley','spur'].map((t,i)=>`<div class="lesson-symbol"><canvas width="180" height="130" data-contour-demo="${t}"></canvas><b>${['פסגה','אוכף','ואדי','שלוחה'][i]}</b></div>`).join('')}
+      </div>`;
+    } else if (skillId === 'memory') {
+      line = 'מסתכלים, זוכרים, ואז מזהים את אותה מפה.';
+      visual = `<div class="memory-demo"><span>🗺</span><span>→</span><span class="cover">▰</span></div>`;
+    } else {
+      line = 'עוקבים אחר החצים ולוחצים על נקודת הסיום.';
+      visual = `<div class="route-demo"><span>↑2</span><span>→3</span><span>↓1</span></div>`;
+    }
+    els.mount.innerHTML = `<div class="lesson-card"><div class="lesson-visual">${visual}</div><h2>${s.icon} ${s.name}</h2><p>${line}</p><button class="primary big-btn" id="lessonStart">התחל</button></div>`;
+    if (skillId === 'contours') {
+      els.mount.querySelectorAll('[data-contour-demo]').forEach(c => drawContourDiagram(c, c.dataset.contourDemo, false));
+    }
+    document.getElementById('timerBox').textContent = 'לימוד';
+    document.getElementById('lessonStart').onclick = nextQuestion;
+  }
+
+  function chooseQuestionSkill() {
+    if (session.skillId !== 'mixed') return session.skillId;
+    if (session.mode === 'test') {
+      const balanced = SKILLS[(session.index * 3 + randInt(0,2)) % SKILLS.length].id;
+      return balanced;
+    }
+    const weighted = [];
+    SKILLS.forEach(s => {
+      const weight = 1 + Math.ceil((100 - skillMastery(s.id)) / 22);
+      for (let i=0; i<weight; i++) weighted.push(s.id);
+    });
+    let selected = choice(weighted);
+    if (selected === session.lastQuestionSkill && weighted.length > 1) selected = choice(weighted.filter(x => x !== selected));
+    return selected;
+  }
+
+  function nextQuestion() {
+    clearQuestionTimer();
+    if (!session) return;
+    if (session.index >= session.total) { finishSession(); return; }
+    questionToken += 1;
+    const token = questionToken;
+    const skillId = chooseQuestionSkill();
+    session.lastQuestionSkill = skillId;
+    const level = state.skills[skillId].level;
+    session.questionStartedAt = performance.now();
+    currentQuestion = { token, skillId, level, answered: false };
+    updateSessionTop();
+    renderQuestion(skillId, level, token);
+  }
+
+  function renderQuestion(skillId, level, token) {
+    const renderers = {
+      directions: renderDirections,
+      rotation: renderRotation,
+      coordinates: renderCoordinates,
+      azimuth: renderAzimuth,
+      contours: renderContours,
+      memory: renderMemory,
+      route: renderRoute
+    };
+    renderers[skillId](level, token);
+    if (session.mode === 'test' && skillId !== 'memory') startCountdown(level >= 3 ? 14 : 17, token);
+    else if (session.mode !== 'test' && skillId !== 'memory') startStopwatch(token);
+  }
+
+  function setQuestionHeader(title, sub='') {
+    els.mount.innerHTML = `<h2 class="question-title">${title}</h2><div class="question-sub">${sub}</div>`;
+  }
+
+  function makeCanvas(w=640, h=390, cls='main-canvas') {
+    const canvas = document.createElement('canvas');
+    canvas.width = w; canvas.height = h; canvas.className = cls;
+    canvas.setAttribute('role','img');
+    return canvas;
+  }
+
+  function drawTerrainBackground(ctx, w, h, seed=1) {
+    ctx.clearRect(0,0,w,h);
+    ctx.fillStyle = '#f6faf8'; ctx.fillRect(0,0,w,h);
+    ctx.strokeStyle = '#d7e2dd'; ctx.lineWidth = 2;
+    for (let i=0; i<5; i++) {
+      ctx.beginPath();
+      const y = 45 + i * (h-80)/4;
+      for (let x=0; x<=w; x+=20) {
+        const yy = y + Math.sin((x + seed*37 + i*21)/65) * (9+i*1.5);
+        if (x===0) ctx.moveTo(x,yy); else ctx.lineTo(x,yy);
+      }
+      ctx.stroke();
+    }
+    ctx.strokeStyle = '#c2d2cc'; ctx.lineWidth = 7; ctx.lineCap = 'round';
+    ctx.beginPath();
+    ctx.moveTo(-15, h*.72);
+    ctx.bezierCurveTo(w*.24,h*.53,w*.52,h*.92,w+20,h*.38);
+    ctx.stroke();
+  }
+
+  function drawNorthArrow(ctx, x, y, angle=0, label=true) {
+    ctx.save(); ctx.translate(x,y); ctx.rotate(angle * Math.PI / 180);
+    ctx.fillStyle = '#176b55';
+    ctx.beginPath(); ctx.moveTo(0,-28); ctx.lineTo(13,13); ctx.lineTo(0,7); ctx.lineTo(-13,13); ctx.closePath(); ctx.fill();
+    if (label) { ctx.fillStyle = '#13231e'; ctx.font = 'bold 18px Arial'; ctx.textAlign='center'; ctx.fillText('N',0,-35); }
+    ctx.restore();
+  }
+
+  function drawLandmark(ctx, x, y, type, size=15) {
+    ctx.save(); ctx.translate(x,y); ctx.lineWidth=3; ctx.strokeStyle='#13231e';
+    if (type === 'flag') {
+      ctx.beginPath(); ctx.moveTo(0,size); ctx.lineTo(0,-size); ctx.stroke();
+      ctx.fillStyle='#c84c4c'; ctx.beginPath(); ctx.moveTo(1,-size); ctx.lineTo(size,-size+5); ctx.lineTo(1,-size+11); ctx.closePath(); ctx.fill();
+    } else if (type === 'tree') {
+      ctx.fillStyle='#2d8067'; ctx.beginPath(); ctx.moveTo(0,-size); ctx.lineTo(size,size*.55); ctx.lineTo(-size,size*.55); ctx.closePath(); ctx.fill();
+      ctx.fillStyle='#76563c'; ctx.fillRect(-3,size*.45,6,size*.65);
+    } else if (type === 'house') {
+      ctx.fillStyle='#d49b55'; ctx.fillRect(-size*.72,-size*.2,size*1.44,size*1.05);
+      ctx.fillStyle='#8c4f3b'; ctx.beginPath(); ctx.moveTo(-size,-size*.2); ctx.lineTo(0,-size); ctx.lineTo(size,-size*.2); ctx.closePath(); ctx.fill();
+    } else if (type === 'rock') {
+      ctx.fillStyle='#7d8a85'; ctx.beginPath(); ctx.arc(0,0,size*.72,0,Math.PI*2); ctx.fill();
+    } else if (type === 'water') {
+      ctx.fillStyle='#4f91b5'; ctx.beginPath(); ctx.moveTo(0,-size); ctx.lineTo(size,0); ctx.lineTo(0,size); ctx.lineTo(-size,0); ctx.closePath(); ctx.fill();
+    } else {
+      ctx.fillStyle='#d48a3c'; ctx.beginPath(); ctx.arc(0,0,size*.55,0,Math.PI*2); ctx.fill();
+    }
+    ctx.restore();
+  }
+
+  function renderDirections(level, token) {
+    const dir = choice(DIRS);
+    const distance = level === 1 ? 1 : randInt(1,2);
+    setQuestionHeader('מה כיוון היעד?', level === 1 ? 'מהעיגול אל הדגל' : 'מהנקודה הירוקה אל הדגל');
+    const wrap = document.createElement('div'); wrap.className='visual-wrap';
+    const canvas = makeCanvas(); wrap.appendChild(canvas); els.mount.appendChild(wrap);
+    const ctx = canvas.getContext('2d');
+    drawTerrainBackground(ctx, canvas.width, canvas.height, randInt(1,50));
+    const cx=canvas.width/2, cy=canvas.height/2;
+    const step=90*distance;
+    const tx=cx+dir.dx*step, ty=cy-dir.dy*step;
+    ctx.fillStyle='#176b55'; ctx.beginPath(); ctx.arc(cx,cy,17,0,Math.PI*2); ctx.fill();
+    drawLandmark(ctx,tx,ty,'flag',19);
+    drawNorthArrow(ctx,70,72,0,true);
+    ctx.setLineDash([8,8]); ctx.strokeStyle='rgba(23,107,85,.38)'; ctx.lineWidth=3;
+    ctx.beginPath(); ctx.moveTo(cx,cy); ctx.lineTo(tx,ty); ctx.stroke(); ctx.setLineDash([]);
+
+    const grid=document.createElement('div'); grid.className='compass-grid';
+    const pos = { NW:0,N:1,NE:2,W:3,E:5,SW:6,S:7,SE:8 };
+    for (let i=0;i<9;i++) {
+      if (i===4) { const c=document.createElement('div'); c.className='center-cell'; c.textContent='●'; grid.appendChild(c); continue; }
+      const d=DIRS.find(x=>pos[x.id]===i);
+      const b=document.createElement('button'); b.className='answer-btn'; b.innerHTML=`<span style="font-size:30px">${d.arrow}</span><small style="display:block;font-size:11px">${d.label}</small>`;
+      b.onclick=()=>finishAnswer(d.id===dir.id,{correctLabel:dir.label, answerButton:b}); grid.appendChild(b);
+    }
+    els.mount.appendChild(grid);
+  }
+
+  function renderRotation(level, token) {
+    const step = level === 1 ? 90 : 45;
+    const choices = [];
+    for (let a=step; a<360; a+=step) choices.push(a);
+    let rotation=choice(choices);
+    const landmarks=[
+      {x:-120,y:-70,type:'tree'}, {x:105,y:-85,type:'house'}, {x:65,y:80,type:'water'}, {x:-90,y:65,type:'rock'}
+    ];
+    setQuestionHeader('יישר את המפה לצפון', `סיבוב בקפיצות של ${step}°`);
+    const wrap=document.createElement('div'); wrap.className='visual-wrap';
+    const canvas=makeCanvas(640,420); wrap.appendChild(canvas); els.mount.appendChild(wrap);
+    const draw=()=>{
+      const ctx=canvas.getContext('2d'); ctx.clearRect(0,0,canvas.width,canvas.height); ctx.fillStyle='#eef3f1'; ctx.fillRect(0,0,canvas.width,canvas.height);
+      ctx.save(); ctx.translate(canvas.width/2,canvas.height/2); ctx.rotate(rotation*Math.PI/180);
+      ctx.fillStyle='#fff'; ctx.strokeStyle='#93a9a1'; ctx.lineWidth=3; roundRect(ctx,-230,-150,460,300,22,true,true);
+      ctx.save(); ctx.translate(-230,-150); drawTerrainBackground(ctx,460,300,11); ctx.restore();
+      landmarks.forEach(l=>drawLandmark(ctx,l.x,l.y,l.type,16));
+      drawNorthArrow(ctx,0,-108,0,true);
+      ctx.restore();
+      ctx.strokeStyle='#176b55'; ctx.lineWidth=2; ctx.setLineDash([6,5]); ctx.beginPath(); ctx.moveTo(canvas.width/2,18); ctx.lineTo(canvas.width/2,70); ctx.stroke(); ctx.setLineDash([]);
+      ctx.fillStyle='#176b55'; ctx.font='bold 17px Arial'; ctx.textAlign='center'; ctx.fillText('צפון המסך',canvas.width/2,15);
+    };
+    draw();
+    const controls=document.createElement('div'); controls.className='rotation-controls';
+    const left=document.createElement('button'); left.className='round-control'; left.textContent='↶';
+    const right=document.createElement('button'); right.className='round-control'; right.textContent='↷';
+    const ok=document.createElement('button'); ok.className='primary confirm-control'; ok.textContent='אישור';
+    left.onclick=()=>{rotation=(rotation-step+360)%360;draw();};
+    right.onclick=()=>{rotation=(rotation+step)%360;draw();};
+    ok.onclick=()=>finishAnswer(rotation===0,{correctLabel:'חץ N כלפי מעלה', answerButton:ok});
+    controls.append(left,ok,right); els.mount.appendChild(controls);
+  }
+
+  function roundRect(ctx,x,y,w,h,r,fill,stroke) {
+    if (w<2*r) r=w/2; if (h<2*r) r=h/2;
+    ctx.beginPath(); ctx.moveTo(x+r,y); ctx.arcTo(x+w,y,x+w,y+h,r); ctx.arcTo(x+w,y+h,x,y+h,r); ctx.arcTo(x,y+h,x,y,r); ctx.arcTo(x,y,x+w,y,r); ctx.closePath();
+    if (fill) ctx.fill(); if (stroke) ctx.stroke();
+  }
+
+  function drawCoordinateGrid(canvas, size, point=null, clickable=false) {
+    const ctx=canvas.getContext('2d'); const w=canvas.width,h=canvas.height;
+    ctx.clearRect(0,0,w,h); ctx.fillStyle='#f8fbfa';ctx.fillRect(0,0,w,h);
+    const pad=62, grid=Math.min(w-pad-25,h-pad-18), cell=grid/size, ox=pad, oy=18;
+    ctx.strokeStyle='#9fb1aa';ctx.lineWidth=1;
+    for(let i=0;i<=size;i++){
+      ctx.beginPath();ctx.moveTo(ox+i*cell,oy);ctx.lineTo(ox+i*cell,oy+grid);ctx.stroke();
+      ctx.beginPath();ctx.moveTo(ox,oy+i*cell);ctx.lineTo(ox+grid,oy+i*cell);ctx.stroke();
+    }
+    ctx.fillStyle='#13231e';ctx.font='bold 18px Arial';ctx.textAlign='center';ctx.textBaseline='middle';
+    for(let i=1;i<=size;i++){
+      ctx.fillText(String(i),ox+(i-.5)*cell,oy+grid+25);
+      ctx.fillText(String(size-i+1),ox-27,oy+(i-.5)*cell);
+    }
+    ctx.fillStyle='#176b55';ctx.font='bold 15px Arial';ctx.fillText('→',ox+grid/2,oy+grid+48);ctx.fillText('↑',ox-49,oy+grid/2);
+    if(point){
+      const px=ox+(point.x-.5)*cell, py=oy+grid-(point.y-.5)*cell;
+      ctx.fillStyle='#c84c4c';ctx.beginPath();ctx.arc(px,py,Math.max(11,cell*.16),0,Math.PI*2);ctx.fill();
+      ctx.strokeStyle='#fff';ctx.lineWidth=3;ctx.stroke();
+    }
+    return {ox,oy,grid,cell,size};
+  }
+
+  function renderCoordinates(level, token) {
+    const size=level===1?5:level===2?6:8;
+    const target={x:randInt(1,size),y:randInt(1,size)};
+    const readMode=level>1 && Math.random()<.45;
+    if(!readMode){
+      setQuestionHeader(`לחץ על ${target.x}, ${target.y}`, 'ימינה → ואז למעלה ↑');
+      const wrap=document.createElement('div');wrap.className='visual-wrap';
+      const canvas=makeCanvas(620,520);wrap.appendChild(canvas);els.mount.appendChild(wrap);
+      const meta=drawCoordinateGrid(canvas,size,null,true);
+      canvas.style.cursor='crosshair';
+      bindCanvasTap(canvas,(ev)=>{
+        if(currentQuestion?.answered)return;
+        const r=canvas.getBoundingClientRect(),sx=canvas.width/r.width,sy=canvas.height/r.height;
+        const mx=(ev.clientX-r.left)*sx,my=(ev.clientY-r.top)*sy;
+        if(mx<meta.ox||mx>meta.ox+meta.grid||my<meta.oy||my>meta.oy+meta.grid)return;
+        const x=clamp(Math.floor((mx-meta.ox)/meta.cell)+1,1,size);
+        const row=Math.floor((my-meta.oy)/meta.cell);
+        const y=clamp(size-row,1,size);
+        drawCoordinateGrid(canvas,size,{x,y});
+        finishAnswer(x===target.x&&y===target.y,{correctLabel:`${target.x}, ${target.y}`});
+      });
+    } else {
+      setQuestionHeader('מה הקואורדינטה?', 'קודם המספר האופקי');
+      const wrap=document.createElement('div');wrap.className='visual-wrap';const canvas=makeCanvas(620,520);wrap.appendChild(canvas);els.mount.appendChild(wrap);drawCoordinateGrid(canvas,size,target);
+      const opts=new Set([`${target.x}, ${target.y}`]);
+      while(opts.size<4){opts.add(`${clamp(target.x+randInt(-2,2),1,size)}, ${clamp(target.y+randInt(-2,2),1,size)}`);}
+      addAnswerButtons(shuffle([...opts]),`${target.x}, ${target.y}`,x=>x);
+    }
+  }
+
+  function renderAzimuth(level, token) {
+    const step=level===1?90:level===2?45:15;
+    const angle=randInt(0,Math.floor(359/step))*step;
+    setQuestionHeader('מה האזימוט?', level===1?'0° צפון · 90° מזרח':'הזווית נמדדת מהצפון עם כיוון השעון');
+    const wrap=document.createElement('div');wrap.className='visual-wrap';const canvas=makeCanvas(520,520);wrap.appendChild(canvas);els.mount.appendChild(wrap);
+    drawAzimuthCanvas(canvas,angle,level);
+    const opts=new Set([angle]);
+    const deltas=level===1?[90,180,270]:level===2?[45,90,135,180]:[15,30,45,60,90];
+    while(opts.size<4){const d=choice(deltas)*(Math.random()<.5?-1:1);opts.add((angle+d+360)%360);}
+    addAnswerButtons(shuffle([...opts]),angle,x=>`${x}°`,'degree-btn');
+  }
+
+  function drawAzimuthCanvas(canvas,angle,level){
+    const ctx=canvas.getContext('2d'),cx=canvas.width/2,cy=canvas.height/2,r=200;
+    ctx.clearRect(0,0,canvas.width,canvas.height);ctx.fillStyle='#f8fbfa';ctx.fillRect(0,0,canvas.width,canvas.height);
+    ctx.strokeStyle='#789087';ctx.lineWidth=3;ctx.beginPath();ctx.arc(cx,cy,r,0,Math.PI*2);ctx.stroke();
+    ctx.fillStyle='#13231e';ctx.font='bold 20px Arial';ctx.textAlign='center';ctx.textBaseline='middle';
+    const labels=[[0,'0'],[90,'90'],[180,'180'],[270,'270']];
+    labels.forEach(([a,t])=>{const rad=(a-90)*Math.PI/180;ctx.fillText(t,cx+Math.cos(rad)*(r-24),cy+Math.sin(rad)*(r-24));});
+    const tickStep=level===3?15:45;
+    for(let a=0;a<360;a+=tickStep){const rad=(a-90)*Math.PI/180;const len=a%90===0?16:9;ctx.strokeStyle='#9aaba5';ctx.lineWidth=a%90===0?3:1.5;ctx.beginPath();ctx.moveTo(cx+Math.cos(rad)*(r-len),cy+Math.sin(rad)*(r-len));ctx.lineTo(cx+Math.cos(rad)*r,cy+Math.sin(rad)*r);ctx.stroke();}
+    const rad=(angle-90)*Math.PI/180;const tx=cx+Math.cos(rad)*150,ty=cy+Math.sin(rad)*150;
+    ctx.strokeStyle='#176b55';ctx.lineWidth=9;ctx.lineCap='round';ctx.beginPath();ctx.moveTo(cx,cy);ctx.lineTo(tx,ty);ctx.stroke();
+    ctx.save();ctx.translate(tx,ty);ctx.rotate(rad+Math.PI/2);ctx.fillStyle='#176b55';ctx.beginPath();ctx.moveTo(0,-20);ctx.lineTo(14,12);ctx.lineTo(-14,12);ctx.closePath();ctx.fill();ctx.restore();
+    ctx.fillStyle='#176b55';ctx.beginPath();ctx.arc(cx,cy,12,0,Math.PI*2);ctx.fill();
+  }
+
+  function renderContours(level, token) {
+    const comparison=level>=2 && Math.random()<.36;
+    if(comparison){
+      const correctSide=Math.random()<.5?'left':'right';
+      setQuestionHeader('איזה מדרון תלול יותר?', 'קווים צפופים = תלול');
+      const options=document.createElement('div');options.className='memory-options';options.style.marginTop='25px';
+      ['right','left'].forEach(side=>{
+        const b=document.createElement('button');b.className='memory-choice';
+        const c=makeCanvas(360,260,'');b.appendChild(c);options.appendChild(b);
+        const close=side===correctSide;drawSlopeSpacing(c,close);
+        b.onclick=()=>finishAnswer(close,{correctLabel:'המפה עם הקווים הצפופים',answerButton:b});
+      });
+      els.mount.appendChild(options);
+      return;
+    }
+    const types=level===1?['hill','saddle']:['hill','saddle','valley','spur'];
+    const type=choice(types);
+    const labels={hill:'פסגה',saddle:'אוכף',valley:'ואדי',spur:'שלוחה'};
+    setQuestionHeader('איזו צורת שטח מוצגת?', type==='valley'||type==='spur'?'החץ מצביע לכיוון הגבוה':'זהה את צורת הקווים');
+    const wrap=document.createElement('div');wrap.className='visual-wrap';const canvas=makeCanvas(640,400);wrap.appendChild(canvas);els.mount.appendChild(wrap);drawContourDiagram(canvas,type,true);
+    const all=['פסגה','אוכף','ואדי','שלוחה'];
+    const opts=level===1?shuffle(['פסגה','אוכף','ואדי','שלוחה']):shuffle(all);
+    addAnswerButtons(opts,labels[type],x=>x);
+  }
+
+  function drawContourDiagram(canvas,type,large=true){
+    const ctx=canvas.getContext('2d'),w=canvas.width,h=canvas.height;ctx.clearRect(0,0,w,h);ctx.fillStyle='#f8fbfa';ctx.fillRect(0,0,w,h);ctx.strokeStyle='#866c4d';ctx.lineWidth=large?4:3;
+    if(type==='hill'){
+      for(let i=0;i<4;i++){ctx.beginPath();ctx.ellipse(w/2,h/2,(w*.38)-i*w*.07,(h*.35)-i*h*.06,0,0,Math.PI*2);ctx.stroke();}
+      ctx.fillStyle='#176b55';ctx.beginPath();ctx.arc(w/2,h/2,large?9:6,0,Math.PI*2);ctx.fill();
+    }else if(type==='saddle'){
+      const centers=[w*.34,w*.66];
+      centers.forEach(cx=>{for(let i=0;i<3;i++){ctx.beginPath();ctx.ellipse(cx,h*.48,w*(.19-i*.04),h*(.30-i*.055),0,0,Math.PI*2);ctx.stroke();}});
+      ctx.setLineDash([7,6]);ctx.strokeStyle='#176b55';ctx.beginPath();ctx.moveTo(w*.5,h*.25);ctx.lineTo(w*.5,h*.72);ctx.stroke();ctx.setLineDash([]);
+    }else{
+      ctx.strokeStyle='#866c4d';
+      const valley=type==='valley';
+      for(let i=0;i<5;i++){
+        const y=45+i*(h-90)/4;const amp=(large?70:30)+i*(large?7:3);ctx.beginPath();
+        if(valley){ctx.moveTo(35,y);ctx.lineTo(w/2,y-amp);ctx.lineTo(w-35,y);}else{ctx.moveTo(35,y);ctx.lineTo(w/2,y+amp);ctx.lineTo(w-35,y);}ctx.stroke();
+      }
+      if(type==='valley'){ctx.strokeStyle='#4f91b5';ctx.setLineDash([8,6]);ctx.lineWidth=3;ctx.beginPath();ctx.moveTo(w/2,25);ctx.lineTo(w/2,h-25);ctx.stroke();ctx.setLineDash([]);}
+      if(large){ctx.fillStyle='#176b55';ctx.font='bold 18px Arial';ctx.textAlign='center';ctx.fillText('גבוה ↑',w/2,22);}
+    }
+  }
+
+  function drawSlopeSpacing(canvas,close){
+    const ctx=canvas.getContext('2d'),w=canvas.width,h=canvas.height;ctx.fillStyle='#f8fbfa';ctx.fillRect(0,0,w,h);ctx.strokeStyle='#866c4d';ctx.lineWidth=4;
+    const spacing=close?20:42;const count=close?8:5;const start=(h-(count-1)*spacing)/2;
+    for(let i=0;i<count;i++){ctx.beginPath();ctx.ellipse(w/2,h/2,w*.38-i*7,h*.34-i*(spacing*.20),0,0,Math.PI*2);ctx.stroke();}
+  }
+
+  function generateMemoryMap(count=5){
+    const types=shuffle(['flag','tree','house','rock','water','dot']);
+    const points=[];
+    for(let i=0;i<count;i++){
+      let p,tries=0;
+      do{p={x:randInt(70,570),y:randInt(55,325),type:types[i%types.length]};tries++;}while(points.some(q=>Math.hypot(p.x-q.x,p.y-q.y)<90)&&tries<50);
+      points.push(p);
+    }
+    return {seed:randInt(1,90),points};
+  }
+
+  function drawMemoryMap(canvas,map,mini=false){
+    const ctx=canvas.getContext('2d');const sx=canvas.width/640,sy=canvas.height/380;
+    ctx.save();ctx.scale(sx,sy);drawTerrainBackground(ctx,640,380,map.seed);map.points.forEach(p=>drawLandmark(ctx,p.x,p.y,p.type,mini?13:18));drawNorthArrow(ctx,58,60,0,!mini);ctx.restore();
+  }
+
+  function memoryVariants(base){
+    const vars=[JSON.parse(JSON.stringify(base))];
+    for(let i=0;i<3;i++){
+      const v=JSON.parse(JSON.stringify(base));const idx=i%v.points.length;
+      if(i===2){const types=['flag','tree','house','rock','water','dot'].filter(t=>t!==v.points[idx].type);v.points[idx].type=choice(types);}else{v.points[idx].x=clamp(v.points[idx].x+(i===0?110:-120),55,585);v.points[idx].y=clamp(v.points[idx].y+(i===0?-70:85),45,335);}
+      vars.push(v);
+    }
+    return shuffle(vars.map((map,i)=>({map,correct:i===0})));
+  }
+
+  function renderMemory(level, token) {
+    const map=generateMemoryMap(level===1?4:level===2?5:6);
+    const revealSeconds=session.mode==='learn'?7:level===1?6:5;
+    setQuestionHeader('זכור את המפה', 'המפה תיעלם');
+    const wrap=document.createElement('div');wrap.className='visual-wrap';const canvas=makeCanvas(640,380);wrap.appendChild(canvas);els.mount.appendChild(wrap);drawMemoryMap(canvas,map,false);
+    const count=document.createElement('div');count.className='reveal-count';count.textContent=revealSeconds;els.mount.appendChild(count);
+    let remaining=revealSeconds;
+    document.getElementById('timerBox').textContent=`${remaining}`;
+    const localToken=token;
+    const interval=setInterval(()=>{
+      if(!session||questionToken!==localToken){clearInterval(interval);return;}
+      remaining-=1;count.textContent=remaining;document.getElementById('timerBox').textContent=`${Math.max(0,remaining)}`;
+      if(remaining<=0){clearInterval(interval);showMemoryChoices(map,localToken);}
+    },1000);
+    currentQuestion.cleanup=()=>clearInterval(interval);
+  }
+
+  function showMemoryChoices(map,token){
+    if(!session||questionToken!==token)return;
+    setQuestionHeader('איזו מפה ראית?', 'לחץ על המפה הזהה');
+    const grid=document.createElement('div');grid.className='memory-options';
+    memoryVariants(map).forEach(v=>{
+      const b=document.createElement('button');b.className='memory-choice';const c=makeCanvas(320,190,'');b.appendChild(c);drawMemoryMap(c,v.map,true);b.onclick=()=>finishAnswer(v.correct,{correctLabel:'המפה ללא שינוי',answerButton:b});grid.appendChild(b);
+    });
+    els.mount.appendChild(grid);
+    session.questionStartedAt=performance.now();
+    if(session.mode==='test')startCountdown(12,token);else startStopwatch(token);
+  }
+
+  function generateRoute(level,size=7){
+    const count=level===1?3:level===2?4:5;
+    let x=randInt(2,size-1),y=randInt(2,size-1);const start={x,y};const moves=[];
+    const allowed=level===3?DIRS:DIRS.filter(d=>['N','E','S','W'].includes(d.id));
+    for(let i=0;i<count;i++){
+      const valid=allowed.filter(d=>x+d.dx>=1&&x+d.dx<=size&&y+d.dy>=1&&y+d.dy<=size);
+      const d=choice(valid);
+      const xLimit=d.dx>0?size-x:d.dx<0?x-1:99;
+      const yLimit=d.dy>0?size-y:d.dy<0?y-1:99;
+      const maxStep=Math.min(3,xLimit,yLimit);
+      const step=randInt(1,Math.max(1,maxStep));
+      x+=d.dx*step;y+=d.dy*step;moves.push({dir:d,step});
+    }
+    return {start,end:{x,y},moves,size};
+  }
+
+  function renderRoute(level, token) {
+    const route=generateRoute(level);
+    setQuestionHeader('היכן תסיים?', session.mode==='learn'?'החצים נשארים מוצגים':'זכור את הרצף');
+    const seq=document.createElement('div');seq.className='sequence-bar';
+    route.moves.forEach(m=>{const c=document.createElement('div');c.className='move-chip';c.textContent=`${m.dir.arrow}${m.step}`;seq.appendChild(c);});els.mount.appendChild(seq);
+    const wrap=document.createElement('div');wrap.className='visual-wrap';const canvas=makeCanvas(610,520);wrap.appendChild(canvas);els.mount.appendChild(wrap);
+    const meta=drawRouteGrid(canvas,route,null);
+    const hideDelay=session.mode==='learn'?999999:(level===1?5500:level===2?4500:3500);
+    const t=setTimeout(()=>{if(questionToken===token)seq.classList.add('sequence-hidden');},hideDelay);
+    currentQuestion.cleanup=()=>clearTimeout(t);
+    canvas.style.cursor='crosshair';
+    bindCanvasTap(canvas,(ev)=>{
+      if(currentQuestion?.answered)return;
+      const r=canvas.getBoundingClientRect(),sx=canvas.width/r.width,sy=canvas.height/r.height,mx=(ev.clientX-r.left)*sx,my=(ev.clientY-r.top)*sy;
+      if(mx<meta.ox||mx>meta.ox+meta.grid||my<meta.oy||my>meta.oy+meta.grid)return;
+      const x=clamp(Math.floor((mx-meta.ox)/meta.cell)+1,1,route.size);const row=Math.floor((my-meta.oy)/meta.cell);const y=clamp(route.size-row,1,route.size);
+      drawRouteGrid(canvas,route,{x,y});finishAnswer(x===route.end.x&&y===route.end.y,{correctLabel:`משבצת ${route.end.x}, ${route.end.y}`});
+    });
+  }
+
+  function drawRouteGrid(canvas,route,selected){
+    const ctx=canvas.getContext('2d'),size=route.size,pad=50,grid=Math.min(canvas.width-pad-20,canvas.height-pad-20),cell=grid/size,ox=pad,oy=15;
+    ctx.clearRect(0,0,canvas.width,canvas.height);ctx.fillStyle='#f8fbfa';ctx.fillRect(0,0,canvas.width,canvas.height);ctx.strokeStyle='#a9b8b2';ctx.lineWidth=1;
+    for(let i=0;i<=size;i++){ctx.beginPath();ctx.moveTo(ox+i*cell,oy);ctx.lineTo(ox+i*cell,oy+grid);ctx.stroke();ctx.beginPath();ctx.moveTo(ox,oy+i*cell);ctx.lineTo(ox+grid,oy+i*cell);ctx.stroke();}
+    const point=(p)=>({x:ox+(p.x-.5)*cell,y:oy+grid-(p.y-.5)*cell});
+    const st=point(route.start);ctx.fillStyle='#176b55';ctx.beginPath();ctx.arc(st.x,st.y,15,0,Math.PI*2);ctx.fill();ctx.fillStyle='#fff';ctx.font='bold 13px Arial';ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillText('S',st.x,st.y);
+    if(selected){const p=point(selected);ctx.strokeStyle='#c84c4c';ctx.lineWidth=5;ctx.beginPath();ctx.arc(p.x,p.y,19,0,Math.PI*2);ctx.stroke();}
+    drawNorthArrow(ctx,25,48,0,false);return{ox,oy,grid,cell};
+  }
+
+  function addAnswerButtons(options,correct,formatter=(x)=>x,extraClass=''){
+    const box=document.createElement('div');box.className='answers';
+    options.forEach(opt=>{const b=document.createElement('button');b.className=`answer-btn ${extraClass}`;b.textContent=formatter(opt);b.onclick=()=>finishAnswer(String(opt)===String(correct),{correctLabel:formatter(correct),answerButton:b});box.appendChild(b);});
+    els.mount.appendChild(box);
+  }
+
+  function finishAnswer(correct, meta={}) {
+    if (!session || !currentQuestion || currentQuestion.answered) return;
+    currentQuestion.answered = true;
+    clearQuestionTimer();
+    if (typeof currentQuestion.cleanup === 'function') currentQuestion.cleanup();
+    const elapsed = performance.now() - session.questionStartedAt;
+    const skillId = currentQuestion.skillId;
+    recordResult(skillId, correct, elapsed);
+    session.results.push({ skillId, correct, elapsed });
+    if (correct) session.correct += 1;
+
+    const answerButtons = els.mount.querySelectorAll('button');
+    answerButtons.forEach(b => b.disabled = true);
+    if (meta.answerButton) meta.answerButton.classList.add(correct ? 'correct' : 'wrong');
+
+    session.index += 1;
+    updateSessionTop();
+
+    if (session.mode === 'test') {
+      setTimeout(() => { if (session) nextQuestion(); }, 250);
+      return;
+    }
+
+    showToast(correct, correct ? 'נכון ✓' : `לא. ${meta.correctLabel || 'נסה שוב בתרגול הבא'}`);
+    const shouldPulse = session.index < session.total && session.index % 5 === 0;
+    setTimeout(() => {
+      if (!session) return;
+      if (shouldPulse) showProgressPulse(skillId);
+      else nextQuestion();
+    }, correct ? 650 : 1050);
+  }
+
+  function showToast(good, text) {
+    clearTimeout(toastHandle);
+    els.feedback.className = `feedback-toast ${good?'good':'bad'} show`;
+    els.feedback.textContent = text;
+    toastHandle = setTimeout(() => els.feedback.classList.remove('show'), 1000);
+  }
+
+  function showProgressPulse(skillId) {
+    const recent=session.results.slice(-5);const accuracy=Math.round(mean(recent.map(r=>r.correct?1:0))*100);const speed=mean(recent.map(r=>r.elapsed))/1000;const mastery=skillMastery(skillId);
+    document.getElementById('pulseAccuracy').textContent=`${accuracy}%`;
+    document.getElementById('pulseSpeed').textContent=speed.toFixed(1);
+    document.getElementById('pulseMastery').textContent=`${mastery}%`;
+    document.getElementById('progressMessage').textContent=accuracy>=80?'קצב טוב. ממשיכים.':accuracy>=60?'בסדר. שמור על דיוק.':'כדאי להאט מעט ולדייק.';
+    els.progressModal.classList.add('show');
+    pendingContinue=()=>{els.progressModal.classList.remove('show');nextQuestion();};
+  }
+
+  function finishSession() {
+    clearQuestionTimer();
+    if (!session) return;
+    const finished = session;
+    document.getElementById('sessionProgress').style.width='100%';
+    const accuracy=Math.round(finished.correct/finished.total*100);
+    const avg=mean(finished.results.map(r=>r.elapsed))/1000;
+    document.getElementById('resultTitle').textContent=finished.mode==='test'?'תוצאת סימולציה':'האימון הושלם';
+    document.getElementById('resultMessage').textContent=accuracy>=85?'דיוק גבוה. שמור על הקצב.':accuracy>=70?'בסיס טוב. חזק את הנושאים החלשים.':'צריך עוד חזרה לפני סימולציה נוספת.';
+    document.getElementById('resultScore').textContent=`${accuracy}%`;
+    document.getElementById('resultCorrect').textContent=`${finished.correct}/${finished.total}`;
+    document.getElementById('resultTime').textContent=avg.toFixed(1);
+
+    const grouped={};finished.results.forEach(r=>{grouped[r.skillId]||={n:0,c:0};grouped[r.skillId].n++;if(r.correct)grouped[r.skillId].c++;});
+    const sorted=Object.entries(grouped).sort((a,b)=>(a[1].c/a[1].n)-(b[1].c/b[1].n));
+    document.getElementById('resultSkills').innerHTML=sorted.map(([id,g])=>{const p=Math.round(g.c/g.n*100);return `<div class="result-skill"><b>${SKILL_BY_ID[id].name}</b><div class="meter"><i style="width:${p}%"></i></div><span>${p}%</span></div>`;}).join('');
+    els.resultModal.classList.add('show');
+  }
+
+  function startStopwatch(token) {
+    clearQuestionTimer();
+    const box=document.getElementById('timerBox');box.classList.remove('danger');
+    const start=performance.now();
+    timerHandle=setInterval(()=>{
+      if(!session||questionToken!==token){clearQuestionTimer();return;}
+      const sec=Math.floor((performance.now()-start)/1000);box.textContent=`${Math.floor(sec/60)}:${String(sec%60).padStart(2,'0')}`;
+    },200);
+  }
+
+  function startCountdown(seconds, token) {
+    clearQuestionTimer();
+    const box=document.getElementById('timerBox');const start=performance.now();const end=start+seconds*1000;
+    const tick=()=>{
+      if(!session||questionToken!==token){clearQuestionTimer();return;}
+      const remain=Math.max(0,end-performance.now());box.textContent=(remain/1000).toFixed(1);box.classList.toggle('danger',remain<5000);
+      if(remain<=0){clearQuestionTimer();finishAnswer(false,{correctLabel:'הזמן נגמר'});}
+    };
+    tick();timerHandle=setInterval(tick,100);
+  }
+
+  function clearQuestionTimer(){if(timerHandle){clearInterval(timerHandle);timerHandle=null;}const box=document.getElementById('timerBox');if(box)box.classList.remove('danger');}
+
+  function exitSession() {
+    clearQuestionTimer();
+    if(currentQuestion&&typeof currentQuestion.cleanup==='function')currentQuestion.cleanup();
+    questionToken+=1;session=null;currentQuestion=null;els.progressModal.classList.remove('show');els.resultModal.classList.remove('show');renderHome();showScreen(els.home);
+  }
+
+  // Events
+  document.querySelectorAll('[data-open-mode]').forEach(b=>b.addEventListener('click',()=>openMode(b.dataset.openMode)));
+  document.getElementById('todayStartBtn').onclick=()=>{const t=recommendedTarget();startSession(t.mode,t.skill);};
+  document.getElementById('modulesBackBtn').onclick=()=>{renderHome();showScreen(els.home);};
+  document.getElementById('sessionExitBtn').onclick=()=>{if(!session||session.index===0||confirm('לצאת מהאימון?'))exitSession();};
+  document.getElementById('continueBtn').onclick=()=>{if(pendingContinue){const fn=pendingContinue;pendingContinue=null;fn();}};
+  document.getElementById('resultHomeBtn').onclick=exitSession;
+  document.getElementById('repeatBtn').onclick=()=>{const m=session?.mode||'practice',s=session?.skillId||'mixed';els.resultModal.classList.remove('show');startSession(m,s);};
+  document.getElementById('settingsBtn').onclick=()=>els.settingsPanel.classList.add('show');
+  document.getElementById('settingsCloseBtn').onclick=()=>els.settingsPanel.classList.remove('show');
+  els.settingsPanel.onclick=e=>{if(e.target===els.settingsPanel)els.settingsPanel.classList.remove('show');};
+  document.getElementById('fullscreenBtn').onclick=async()=>{
+    try {
+      if (document.fullscreenElement) { await document.exitFullscreen?.(); return; }
+      if (document.documentElement.requestFullscreen) { await document.documentElement.requestFullscreen(); return; }
+      showToast(true, 'בטלפון: סובב לרוחב או הוסף למסך הבית');
+    } catch (e) {
+      showToast(true, 'בטלפון: סובב לרוחב או הוסף למסך הבית');
+    }
+  };
+  document.getElementById('resetBtn').onclick=()=>{if(confirm('למחוק את כל ההתקדמות?')){state=defaultState();saveState();els.settingsPanel.classList.remove('show');renderHome();}};
+  window.addEventListener('keydown',e=>{
+    if(e.key==='Escape'&&els.settingsPanel.classList.contains('show'))els.settingsPanel.classList.remove('show');
+    if(!session||currentQuestion?.answered)return;
+    const buttons=[...els.mount.querySelectorAll('.answer-btn:not(:disabled), .memory-choice:not(:disabled)')];
+    if(/^[1-4]$/.test(e.key)&&buttons[Number(e.key)-1])buttons[Number(e.key)-1].click();
+  });
+
+  renderHome();
+})();
+</script>
+</body>
+</html>
